@@ -1,7 +1,7 @@
 /* =============================/* ================= CONFIG (AUTO-GENERATED FOR ALL AGENTS)
 ============================= */
 const WS_URL = "wss://alpha.api.voicehost.io/v3/websocket";
-const TOKEN = "lg5hu94pdk6ptm92mvofknrjl6";
+const TOKEN = "vh_aexn5loscku4qwpw2zuk8fqa2w8sawm838mrkuz8bwz8s8xf3wftz3yreo1qgyu2mug8xtos0vw504gsnml7wm15qn43p5f5zib";
 
 /**
  * These match the structure you were already using:
