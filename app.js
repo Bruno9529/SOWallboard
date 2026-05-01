@@ -1,5 +1,3 @@
-console.log("APP STARTED");
-
 /* =============================
    WALLBOARD – FULL app.js (CLEAN)
    - Auto CONFIG for all agents
