@@ -1,4 +1,5 @@
-/* =============================/* ================= CONFIG (AUTO-GENERATED FOR ALL AGENTS)
+/* =============================
+   CONFIG (AUTO-GENERATED FOR ALL AGENTS)
 ============================= */
 const WS_URL = "wss://alpha.api.voicehost.io/v3/websocket";
 const TOKEN = "lg5hu94pdk6ptm92mvofknrjl6";
