@@ -4,6 +4,51 @@
 const WS_URL = "wss://alpha.api.voicehost.io/v3/websocket";
 const TOKEN = "lg5hu94pdk6ptm92mvofknrjl6";
 
+const WS_URL = "wss://alpha.api.voicehost.io/v3/websocket";
+const TOKEN  = "lg5hu94pdk6ptm92mvofknrjl6";
+
+let ws;
+let subscribed = false;
+
+function connectWebSocket() {
+  subscribed = false;
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    // ✅ authenticate ONCE, ALWAYS with token
+    ws.send(JSON.stringify({
+      command: "authenticate",
+      token: TOKEN
+    }));
+  };
+
+  ws.onmessage = (msg) => {
+    const parsed = JSON.parse(msg.data);
+    console.log("WS:", parsed);
+
+    if (parsed.event === "hello") return;
+
+    if (parsed.status === "OK" && parsed.command_reply === "authenticate" && !subscribed) {
+      subscribed = true;
+      ws.send(JSON.stringify({ command: "updateMetrics", data: CONFIG }));
+      return;
+    }
+
+    if (parsed.status === "UNAUTHORIZED" && parsed.command_reply === "authenticate") {
+      console.error("Auth failed (UNAUTHORIZED). Token invalid/expired or wrong environment.");
+      return;
+    }
+
+    if (parsed.event === "updateMetrics") handleUpdate(parsed.data);
+    if (parsed.event === "updatePresence") handlePresence(parsed.data);
+  };
+
+  ws.onclose = () => console.warn("WS closed");
+  ws.onerror = (e) => console.warn("WS error", e);
+}
+
+connectWebSocket();
+
 /**
  * These match the structure you were already using:
  * widgetId, updateFunction, metricType, metrics[], subType, timeframe. [1](https://voicehost1-my.sharepoint.com/personal/soverman_voicehost1_onmicrosoft_com).js)
