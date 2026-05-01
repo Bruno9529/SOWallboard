@@ -15,14 +15,6 @@ Designed to display live agent activity, call statistics, and availability acros
 - Clock integrated into the top bar
 - TV / wallboard‑friendly layout
 
-## 🌐 Live Demo
-
-The dashboard is hosted using **GitHub Pages**:
-
-👉 **https://YOUR‑USERNAME.github.io/YOUR‑REPO‑NAME/**
-
-(Replace with your actual Pages URL)
-
 ## 📁 Project Structure
 
 ```text
