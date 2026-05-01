@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wallboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Connection banner -->
+  <div id="connBanner" class="conn-banner hidden">
+    <span id="connText">Connecting...</span>
+  </div>
+
+  <div class="dashboard">
+    <!-- TOPBAR (Totals + Switches + Clock) -->
+    <div class="topbar">
+      <!-- Totals -->
+      <div class="totals">
+        <div class="total">
+          <span class="t-label">Inbound</span>
+          <span id="inboundCount" class="t-value">0</span>
+        </div>
+        <div class="total">
+          <span class="t-label">Outbound</span>
+          <span id="outboundCount" class="t-value">0</span>
+        </div>
+        <div class="total">
+          <span class="t-label">Internal</span>
+          <span id="internalCount" class="t-value">0</span>
+        </div>
+        <div class="total">
+          <span class="t-label">Total</span>
+          <span id="totalDuration" class="t-value">00:00</span>
+        </div>
+      </div>
+
+      <!-- Right side: controls + clock -->
+      <div class="topbar-right">
+        <div class="topbar-controls">
+          <!-- Status breakdown switch -->
+          <div class="switch-mini" id="statusSwitchTile">
+            <span class="mini-label">Status</span>
+            <span id="statusSwitchState" class="mini-state">On</span>
+            <button id="statusToggle"
+                    class="switch"
+                    type="button"
+                    role="switch"
+                    aria-checked="true"
+                    aria-label="Toggle status breakdown">
+              <span class="switch-knob" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <!-- View mode switch -->
+          <div class="switch-mini" id="viewSwitchTile">
+            <span class="mini-label">View</span>
+            <span id="viewSwitchState" class="mini-state">Detailed</span>
+            <button id="viewToggle"
+                    class="switch"
+                    type="button"
+                    role="switch"
+                    aria-checked="true"
+                    aria-label="Toggle compact view">
+              <span class="switch-knob" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Clock inside the topbar -->
+        <div class="clock-inline" aria-label="Clock">
+          <div id="clockTime">00:00:00</div>
+          <div id="clockDate">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Highlights strip -->
+    <div id="highlights" class="highlights">
+      <div class="highlight" id="hl_support">
+        <span class="hl-dot"></span>
+        <span id="hlSupportText">Support availability: --</span>
+      </div>
+    </div>
+
+    <!-- AGENTS -->
+    <div id="agentGrid" class="grid"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
