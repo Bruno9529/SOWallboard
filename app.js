@@ -1,72 +1,27 @@
 /* =============================
-   CONFIG (AUTO-GENERATED FOR ALL AGENTS)
+   WALLBOARD – FULL app.js (CLEAN)
+   - Auto CONFIG for all agents
+   - Departments stacked
+   - Status + View toggles
+   - Reconnect banner
+   - Stale detection
+   - Support availability highlight
+   - Clock update
+============================= */
+
+/* =============================
+  🔧 CONFIG
 ============================= */
 const WS_URL = "wss://alpha.api.voicehost.io/v3/websocket";
-const TOKEN = "lg5hu94pdk6ptm92mvofknrjl6";
+const TOKEN = "lg5hu94pdk6ptm92mvofknrjl6".trim(); // trim avoids hidden whitespace
 
-const WS_URL = "wss://alpha.api.voicehost.io/v3/websocket";
-const TOKEN  = "lg5hu94pdk6ptm92mvofknrjl6";
-
-let ws;
-let subscribed = false;
-
-function connectWebSocket() {
-  subscribed = false;
-  ws = new WebSocket(WS_URL);
-
-  ws.onopen = () => {
-    // ✅ authenticate ONCE, ALWAYS with token
-    ws.send(JSON.stringify({
-      command: "authenticate",
-      token: TOKEN
-    }));
-  };
-
-  ws.onmessage = (msg) => {
-    const parsed = JSON.parse(msg.data);
-    console.log("WS:", parsed);
-
-    if (parsed.event === "hello") return;
-
-    if (parsed.status === "OK" && parsed.command_reply === "authenticate" && !subscribed) {
-      subscribed = true;
-      ws.send(JSON.stringify({ command: "updateMetrics", data: CONFIG }));
-      return;
-    }
-
-    if (parsed.status === "UNAUTHORIZED" && parsed.command_reply === "authenticate") {
-      console.error("Auth failed (UNAUTHORIZED). Token invalid/expired or wrong environment.");
-      return;
-    }
-
-    if (parsed.event === "updateMetrics") handleUpdate(parsed.data);
-    if (parsed.event === "updatePresence") handlePresence(parsed.data);
-  };
-
-  ws.onclose = () => console.warn("WS closed");
-  ws.onerror = (e) => console.warn("WS error", e);
-}
-
-connectWebSocket();
-
-/**
- * These match the structure you were already using:
- * widgetId, updateFunction, metricType, metrics[], subType, timeframe. [1](https://voicehost1-my.sharepoint.com/personal/soverman_voicehost1_onmicrosoft_com).js)
- *
- * IMPORTANT:
- * - If your tenant prefix isn't "10000", change SEAT_PREFIX below.
- * - If you want a different timeframe, change TIMEFRAME below.
- */
+// If your seat prefix differs, change this:
 const SEAT_PREFIX = "10000";
-const TIMEFRAME   = "today";
 
-/**
- * Metrics displayed by your UI:
- * - Inbound: answered_inbound
- * - Outbound: calls_outbound
- * - Internal: calls_internal
- * - Total talk: duration_total
- */
+// Timeframe for metrics (e.g. "today")
+const TIMEFRAME = "today";
+
+// The four metrics you display in each agent row:
 const METRICS_TO_SUBSCRIBE = [
   "answered_inbound",
   "calls_outbound",
@@ -110,11 +65,12 @@ const agentInfo = {
 
   // Directors
   "201": { name: "Ross", role: "Technical Director", ext: "201", dept: "Directors" },
-  "200": { name: "Phil", role: "Sales Director",     ext: "200", dept: "Directors" }
+  "200": { name: "Phil", role: "Sales Director",     ext: "200", dept: "Directors" },
 };
 
 const DEPARTMENTS = ["Sales", "Support", "Admin", "Operations", "Accounts", "Directors"];
 
+// Stable ordering (exactly as requested)
 const AGENT_ORDER = [
   // Sales
   "244","233","235","227",
@@ -127,7 +83,7 @@ const AGENT_ORDER = [
   // Accounts
   "229",
   // Directors
-  "201","200"
+  "201","200",
 ];
 
 /* =============================
@@ -152,21 +108,20 @@ function buildConfigForAllAgents() {
   return cfg;
 }
 
-// ✅ This is the CONFIG used by updateMetrics subscription
 const CONFIG = buildConfigForAllAgents();
 
 /* =============================
   🧠 STATE
 ============================= */
-const agents = {};           // agentId -> metric map
-const presence = {};         // agentId -> presence payload
-const widgetMap = {};        // widgetId -> { agent, metric }
-const deptContainers = {};   // dept -> element
-const lastSeen = {};         // agentId -> timestamp (ms)
+const agents = {};          // agentId -> metric map
+const presence = {};        // agentId -> presence payload
+const widgetMap = {};       // widgetId -> { agent, metric }
+const deptContainers = {};  // dept -> dept-body element
+const lastSeen = {};        // agentId -> timestamp (ms)
 
 // Toggles
-let showStatusView = true;   // dept header breakdown On/Off
-let detailedView  = true;    // detailed vs compact
+let showStatusView = true;  // dept breakdown On/Off
+let detailedView = true;    // Detailed vs Compact
 
 // WebSocket
 let ws = null;
@@ -177,7 +132,8 @@ let reconnectAttempt = 0;
   🧩 WIDGET MAP
 ============================= */
 function buildWidgetMap() {
-  Object.keys(widgetMap).forEach(k => delete widgetMap[k]);
+  // clear
+  for (const k of Object.keys(widgetMap)) delete widgetMap[k];
 
   if (!Array.isArray(CONFIG) || CONFIG.length === 0) {
     console.warn("CONFIG is empty — no metrics will update.");
@@ -229,6 +185,28 @@ function initDepartments() {
   });
 }
 
+/* Keep agent rows in a stable order inside each dept body */
+function insertAgentInOrder(parent, el, agentId) {
+  const desiredIndex = AGENT_ORDER.indexOf(agentId);
+  if (desiredIndex < 0) {
+    parent.appendChild(el);
+    return;
+  }
+
+  const children = Array.from(parent.children);
+  for (const child of children) {
+    const childId = (child.id || "").replace("agent_", "");
+    const childIndex = AGENT_ORDER.indexOf(childId);
+    if (childIndex < 0) continue;
+
+    if (desiredIndex < childIndex) {
+      parent.insertBefore(el, child);
+      return;
+    }
+  }
+  parent.appendChild(el);
+}
+
 /* =============================
   🔘 TOGGLES
 ============================= */
@@ -237,7 +215,6 @@ function applyStatusView() {
 
   const btn = document.getElementById("statusToggle");
   const stateText = document.getElementById("statusSwitchState");
-
   if (btn) btn.setAttribute("aria-checked", showStatusView ? "true" : "false");
   if (stateText) stateText.textContent = showStatusView ? "On" : "Off";
 
@@ -264,7 +241,6 @@ function applyViewMode() {
 
   const btn = document.getElementById("viewToggle");
   const stateText = document.getElementById("viewSwitchState");
-
   if (btn) btn.setAttribute("aria-checked", detailedView ? "true" : "false");
   if (stateText) stateText.textContent = detailedView ? "Detailed" : "Compact";
 
@@ -312,6 +288,13 @@ function showBanner(text, visible = true, autoHideMs = 0) {
 ============================= */
 function connectWebSocket() {
   subscribed = false;
+
+  if (!TOKEN) {
+    showBanner("Missing token — cannot authenticate", true);
+    console.error("TOKEN is empty.");
+    return;
+  }
+
   showBanner("Connecting…", true);
 
   ws = new WebSocket(WS_URL);
@@ -320,6 +303,7 @@ function connectWebSocket() {
     reconnectAttempt = 0;
     showBanner("Connected", true, 1500);
 
+    // ✅ Authenticate ONCE, always with token
     ws.send(JSON.stringify({
       command: "authenticate",
       token: TOKEN
@@ -333,6 +317,7 @@ function connectWebSocket() {
 
     if (parsed.event === "hello") return;
 
+    // ✅ Auth OK -> subscribe metrics once
     if (parsed.status === "OK" && parsed.command_reply === "authenticate" && !subscribed) {
       subscribed = true;
 
@@ -341,6 +326,13 @@ function connectWebSocket() {
         data: CONFIG
       }));
 
+      return;
+    }
+
+    // ❌ Auth failed
+    if (parsed.status === "UNAUTHORIZED" && parsed.command_reply === "authenticate") {
+      showBanner("Auth failed (UNAUTHORIZED)", true);
+      console.error("UNAUTHORIZED: token invalid/expired or wrong environment/origin.", parsed);
       return;
     }
 
@@ -439,6 +431,7 @@ function renderAgent(id) {
   const p = presence[id];
   const info = agentInfo[id] || { name: "Unknown", ext: id, dept: "Admin" };
 
+  // Determine status
   let status = "offline";
   let statusText = "Off";
 
@@ -454,13 +447,17 @@ function renderAgent(id) {
   if (!parent) return;
 
   let el = document.getElementById("agent_" + id);
+
   if (!el) {
     el = document.createElement("div");
     el.id = "agent_" + id;
     el.className = "agent-row";
-    parent.appendChild(el);
+    insertAgentInOrder(parent, el, id);
   } else {
-    if (el.parentElement !== parent) parent.appendChild(el);
+    // If dept changes, move it
+    if (el.parentElement !== parent) {
+      insertAgentInOrder(parent, el, id);
+    }
   }
 
   el.className = `agent-row ${status}`;
@@ -470,11 +467,11 @@ function renderAgent(id) {
   el.innerHTML = `
     <div class="agent-name">
       <div class="name">
-        ${info.name}
+        ${escapeHtml(info.name)}
         <span class="status-pill">${statusText}</span>
       </div>
-      ${info.role ? `<div class="role">${info.role}</div>` : ""}
-      <div class="ext">Ext ${info.ext}</div>
+      ${info.role ? `<div class="role">${escapeHtml(info.role)}</div>` : ""}
+      <div class="ext">Ext ${escapeHtml(info.ext)}</div>
       <div class="last-updated">${last !== null ? `Updated ${last}s ago` : `No updates yet`}</div>
     </div>
 
@@ -585,8 +582,11 @@ setInterval(() => {
   const timeEl = document.getElementById("clockTime");
   const dateEl = document.getElementById("clockDate");
 
-  if (timeEl) timeEl.innerText = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  if (dateEl) dateEl.innerText = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "short" });
+  if (timeEl) timeEl.innerText =
+    now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+  if (dateEl) dateEl.innerText =
+    now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "short" });
 }, 1000);
 
 /* =============================
@@ -604,6 +604,15 @@ function formatTime(sec) {
   return `${m}:${String(r).padStart(2, "0")}`;
 }
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 /* =============================
   🚀 INIT
 ============================= */
@@ -614,7 +623,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   buildWidgetMap();
 
-  // Pre-render rows so layout is stable even before data arrives
+  // Pre-render agents so they always show (even before data arrives)
   AGENT_ORDER.forEach(id => renderAgent(id));
   updateDeptHeaderCounts();
   updateHighlights();
