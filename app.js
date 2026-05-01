@@ -4,6 +4,43 @@
 const WS_URL = "wss://alpha.api.voicehost.io/v3/websocket";
 const TOKEN = "lg5hu94pdk6ptm92mvofknrjl6";
 
+ws.onopen = () => {
+  console.log("Connected");
+
+  // Step 1: authenticate
+  ws.send(JSON.stringify({
+    command: "authenticate",
+    token: TOKEN
+  }));
+};
+
+ws.onmessage = (msg) => {
+  const parsed = JSON.parse(msg.data);
+
+  console.log("WS:", parsed);
+
+  // 👋 hello (ignore)
+  if (parsed.event === "hello") return;
+
+  // ✅ auth success (THIS is your trigger)
+  if (parsed.status === "OK" && parsed.command_reply === "authenticate") {
+    console.log("Authenticated ✅");
+
+    // Step 2: subscribe to metrics
+    ws.send(JSON.stringify({
+      command: "updateMetrics",
+      data: config
+    }));
+
+    return;
+  }
+
+  // 📡 live updates
+  if (parsed.event === "updateMetrics") {
+    handleUpdate(parsed.data);
+  }
+};];
+
 /**
  * These match the structure you were already using:
  * widgetId, updateFunction, metricType, metrics[], subType, timeframe. [1](https://voicehost1-my.sharepoint.com/personal/soverman_voicehost1_onmicrosoft_com).js)
